@@ -72,7 +72,7 @@ def main(page: ft.Page):
         page.go("/login")
 
     def listar_usuario(e):
-        page.go("/listar_usuario")
+        page.go("/listar_usuarios")
 
 
     def rota_mudou(route):
@@ -89,12 +89,6 @@ def main(page: ft.Page):
                         ft.ElevatedButton("Serviços", on_click=ir_para_servico),
                         ft.ElevatedButton("Usuario", on_click=usuario),
                     ],
-                    #controls=[
-                    #ft.Text("Bem-vindo!", size=30),
-                    #ft.ElevatedButton("Ver Clientes", on_click=ir_para_clientes),
-                    #ft.ElevatedButton("Adicionar Cliente", on_click=ir_para_adicionar),
-                    #ft.ElevatedButton("Editar Cliente", on_click=ir_para_editar),
-                    #],
                     vertical_alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
@@ -109,11 +103,11 @@ def main(page: ft.Page):
             def verificar_login(e):
                 dados = {
                     "email": email.value,
-                    "senha": password.value,  # Corrigido para "senha"
+                    "senha": password.value,
                 }
                 try:
                     resposta = requests.post("http://10.135.232.28:5000/login", json=dados)
-                    print(resposta.text)  # Verifique a resposta
+                    print(resposta.text)
                     if resposta.status_code == 200:
                         set_token(resposta.json().get('token'))
                         page.go("/home")  # Redireciona para a tela de clientes
@@ -186,6 +180,7 @@ def main(page: ft.Page):
             )
 
         elif page.route == "/adicionar":
+
             nome = ft.TextField(label="Nome")
             cpf = ft.TextField(label="CPF")
             telefone = ft.TextField(label="Telefone")
@@ -200,7 +195,8 @@ def main(page: ft.Page):
                     "endereco": endereco.value,
                 }
                 try:
-                    r = requests.post("http://10.135.232.28:5000/adicionarClientes", json=dados)
+                    r = requests.post("http://10.135.232.28:5000/adicionarClientes", json=dados,
+                                      headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 201:
                         resultado.value = "Cliente cadastrado com sucesso!"
                     else:
@@ -232,7 +228,8 @@ def main(page: ft.Page):
 
             def buscar_cliente(e):
                 try:
-                    r = requests.get(f"http://10.135.232.28:5000/listarClientes")
+                    r = requests.get(f"http://10.135.232.28:5000/listarClientes",
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         clientes = r.json()
                         cliente = next((c for c in clientes if c["id_cliente"] == int(id_cliente.value)), None)
@@ -263,7 +260,8 @@ def main(page: ft.Page):
                     "endereco": endereco.value,
                 }
                 try:
-                    r = requests.put(f"http://10.135.232.28:5000/editarClients/{id_cliente.value}", json=dados)
+                    r = requests.put(f"http://10.135.232.28:5000/editarClients/{id_cliente.value}", json=dados,
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         resultado.value = "Cliente editado com sucesso!"
                     elif r.status_code == 404:
@@ -308,7 +306,7 @@ def main(page: ft.Page):
 
         elif page.route == "/listar_veiculos":
             try:
-                resposta = requests.get("http://10.135.232.28:5000/listarVeiculos")
+                resposta = requests.get("http://10.135.232.28:5000/listarVeiculos",  headers={"Authorization": f"Bearer {get_token()}"})
                 dados = resposta.json()
                 veiculos = [
                     ft.Text(
@@ -346,7 +344,8 @@ def main(page: ft.Page):
                     "cliente_id": cliente_id.value,
                 }
                 try:
-                    r = requests.post("http://10.135.232.28:5000/adicionarVeiculo", json=dados)
+                    r = requests.post("http://10.135.232.28:5000/adicionarVeiculo", json=dados,
+                                      headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 201:
                         resultado.value = "carro cadastrado com sucesso!"
                     else:
@@ -378,7 +377,8 @@ def main(page: ft.Page):
 
             def buscar_veiculo(e):
                 try:
-                    r = requests.get(f"http://10.135.232.28:5000/listarVeiculos")
+                    r = requests.get(f"http://10.135.232.28:5000/listarVeiculos",
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         veiculos = r.json()
                         veiculo = next((v for v in veiculos if v["id_veiculo"] == int(id_veiculo.value)), None)
@@ -409,7 +409,8 @@ def main(page: ft.Page):
                     "ano_fabricacao": ano_fabricacao.value,
                 }
                 try:
-                    r = requests.put(f"http://10.135.232.28:5000/editarVeiculos/{id_veiculo.value}", json=dados)
+                    r = requests.put(f"http://10.135.232.28:5000/editarVeiculos/{id_veiculo.value}", json=dados,
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         resultado.value = "Veiculo editado com sucesso!"
                     elif r.status_code == 404:
@@ -453,7 +454,7 @@ def main(page: ft.Page):
             ),
         elif page.route == "/listar_servicos":
             try:
-                resposta = requests.get("http://10.135.232.28:5000/listarOrdemServicos")
+                resposta = requests.get("http://10.135.232.28:5000/listarOrdemServicos",  headers={"Authorization": f"Bearer {get_token()}"})
                 dados = resposta.json()
                 servicos = [
                     ft.Text(
@@ -496,7 +497,8 @@ def main(page: ft.Page):
                     "veiculo_id": veiculo_id.value,
                 }
                 try:
-                    r = requests.post("http://10.135.232.28:5000/adicionarOrdemServico", json=dados)
+                    r = requests.post("http://10.135.232.28:5000/adicionarOrdemServico", json=dados,
+                                      headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 201:
                         resultado.value = "serviço cadastrado com sucesso!"
                     else:
@@ -529,7 +531,8 @@ def main(page: ft.Page):
 
             def buscar_servico(e):
                 try:
-                    r = requests.get(f"http://10.135.232.28:5000/listarOrdemServicos")
+                    r = requests.get(f"http://10.135.232.28:5000/listarOrdemServicos",
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         servicos = r.json()
                         servico = next((s for s in servicos if s["id_servico"] == int(id_servico.value)), None)
@@ -560,7 +563,8 @@ def main(page: ft.Page):
                     "data_abertura": data_abertura.value,
                 }
                 try:
-                    r = requests.put(f"http://10.135.232.28:5000/editarServico/{id_servico.value}", json=dados)
+                    r = requests.put(f"http://10.135.232.28:5000/editarServico/{id_servico.value}", json=dados,
+                                     headers={"Authorization": f"Bearer {get_token()}"})
                     if r.status_code == 200:
                         resultado.value = "servico editado com sucesso!"
                     elif r.status_code == 404:
@@ -642,6 +646,33 @@ def main(page: ft.Page):
                 )
             )
 
+        elif page.route == "/listar_usuarios":
+            try:
+                resposta = requests.get("http://10.135.232.28:5000/listarUsuario",
+                                        headers={"Authorization": f"Bearer {get_token()}"})
+                dados = resposta.json()
+                usuarios = [
+                    ft.Text(
+                        f"Nome: {u['nome']} | CPF: {u['cpf']} | Email: {u['email']} | Função: {u['papel']}"
+                    )
+                    for u in dados
+                ]
+            except Exception as err:
+                usuarios = [ft.Text(f"Erro ao buscar usuario: {err}")]
+
+            page.views.append(
+                ft.View(
+                    "/listar_usuarios",
+                    controls=[
+                        ft.Text("Lista de Usuarios", size=25, weight="bold"),
+                        ft.Column(usuarios, scroll=ft.ScrollMode.ALWAYS),
+                        ft.ElevatedButton("Voltar", on_click=lambda e: page.go("/usuario")),
+                    ],
+                )
+            )
+
+
+
         elif page.route == "/home":
             page.views.append(
                 ft.View(
@@ -653,12 +684,6 @@ def main(page: ft.Page):
                         ft.ElevatedButton("Serviços", on_click=ir_para_servico),
                         ft.ElevatedButton("Usuario", on_click=usuario),
                     ],
-                    #controls=[
-                    #ft.Text("Bem-vindo!", size=30),
-                    #ft.ElevatedButton("Ver Clientes", on_click=ir_para_clientes),
-                    #ft.ElevatedButton("Adicionar Cliente", on_click=ir_para_adicionar),
-                    #ft.ElevatedButton("Editar Cliente", on_click=ir_para_editar),
-                    #],
                     vertical_alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
