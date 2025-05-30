@@ -7,6 +7,18 @@ def main(page: ft.Page):
     page.theme_mode = "light"
     page.padding = 30
 
+    token = None
+
+    def get_token():
+        global token
+        return token
+
+    def set_token(new_token):
+        global token
+        token = new_token
+
+
+
     #CLIENTE
     def ir_para_clientes(e):
         page.go("/clientes")
@@ -49,6 +61,18 @@ def main(page: ft.Page):
         page.go("/editar_servico")
 
 
+    #Usuario
+    def usuario(e):
+        page.go("/usuario")
+
+    def cadastro(e):
+        page.go("/cadastro")
+
+    def login(e):
+        page.go("/login")
+
+    def listar_usuario(e):
+        page.go("/listar_usuario")
 
 
     def rota_mudou(route):
@@ -63,6 +87,7 @@ def main(page: ft.Page):
                         ft.ElevatedButton("Clientes", on_click=ir_para_clientes),
                         ft.ElevatedButton("Veiculos", on_click=ir_para_veiculos),
                         ft.ElevatedButton("Serviços", on_click=ir_para_servico),
+                        ft.ElevatedButton("Usuario", on_click=usuario),
                     ],
                     #controls=[
                     #ft.Text("Bem-vindo!", size=30),
@@ -70,6 +95,49 @@ def main(page: ft.Page):
                     #ft.ElevatedButton("Adicionar Cliente", on_click=ir_para_adicionar),
                     #ft.ElevatedButton("Editar Cliente", on_click=ir_para_editar),
                     #],
+                    vertical_alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            )
+
+        if page.route == "/login":
+            # Tela de Login
+            email = ft.TextField(label="Email", autofocus=True)
+            password = ft.TextField(label="Senha", password=True)
+            login_result = ft.Text("")
+
+            def verificar_login(e):
+                dados = {
+                    "email": email.value,
+                    "senha": password.value,  # Corrigido para "senha"
+                }
+                try:
+                    resposta = requests.post("http://10.135.232.28:5000/login", json=dados)
+                    print(resposta.text)  # Verifique a resposta
+                    if resposta.status_code == 200:
+                        set_token(resposta.json().get('token'))
+                        page.go("/home")  # Redireciona para a tela de clientes
+                    else:
+                        login_result.value = f"Erro: {resposta.status_code} - {resposta.text}"
+                except requests.exceptions.RequestException as err:  # Tratamento de erros de requisição
+                    login_result.value = f"Erro na requisição: {err}"
+                except ValueError:  # Tratamento de erros de JSON
+                    login_result.value = "Erro: Resposta inválida do servidor"
+                except Exception as err:
+                    login_result.value = f"Erro inesperado: {err}"
+                except Exception as err:
+                    login_result.value = f"Erro inesperado: {err}", 500
+                page.update()
+
+            page.views.append(
+                ft.View(
+                    "/login",
+                    controls=[
+                        ft.Text("Login", size=30, weight="bold"),
+                        email, password,
+                        ft.ElevatedButton("Entrar", on_click=verificar_login),
+                        login_result,
+                    ],
                     vertical_alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
@@ -82,7 +150,7 @@ def main(page: ft.Page):
                         ft.ElevatedButton("Ver Clientes", on_click=ir_listar_clientes),
                         ft.ElevatedButton("Adicionar Cliente", on_click=ir_para_adicionar),
                         ft.ElevatedButton("Editar Cliente", on_click=ir_para_editar),
-                        ft.ElevatedButton("HOME", on_click=lambda e: page.go("/")),
+                        ft.ElevatedButton("HOME", on_click=lambda e: page.go("/home")),
                     ],
                     vertical_alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -94,7 +162,8 @@ def main(page: ft.Page):
 
         elif page.route == "/listar_clientes":
             try:
-                resposta = requests.get("http://10.135.232.28:5000/listarClientes")
+                resposta = requests.get("http://10.135.232.28:5000/listarClientes",
+                                        headers={"Authorization": f"Bearer {get_token()}"})
                 dados = resposta.json()
                 clientes = [
                     ft.Text(
@@ -517,6 +586,83 @@ def main(page: ft.Page):
                 )
             )
 
+        elif page.route == "/usuario":
+            page.views.append(
+                ft.View(
+                    controls=[
+                        ft.Text("usuarios!", size=30),
+                        ft.ElevatedButton("Ver usuarios", on_click=listar_usuario),
+                        ft.ElevatedButton("Cadastrar usuarios", on_click=cadastro),
+                        ft.ElevatedButton("login", on_click=login),
+                        ft.ElevatedButton("HOME", on_click=lambda e: page.go("/")),
+                    ],
+                    vertical_alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+
+                )
+
+            ),
+
+        elif page.route == "/cadastro":
+            nome = ft.TextField(label="Nome")
+            email = ft.TextField(label="Email ")
+            cpf = ft.TextField(label="CPF")
+            password = ft.TextField(label="Senha")
+            papel=ft.TextField(label="Papel")
+            resultado = ft.Text("")
+
+            def enviar_dados(e):
+                dados = {
+                    "nome": nome.value,
+                    "email": email.value,
+                    "cpf": cpf.value,
+                    "password": password.value,
+                    "papel": papel.value,
+                }
+                try:
+                    r = requests.post("http://10.135.232.28:5000/cadastro_usuario", json=dados)
+                    if r.status_code == 201:
+                        resultado.value = "usuario cadastrado com sucesso!"
+                    else:
+                        resultado.value = f"Erro: {r.json().get('mensagem', r.text)}"
+                except Exception as err:
+                    resultado.value = f"Erro na requisição: {err}"
+                page.update()
+
+            page.views.append(
+                ft.View(
+                    "/cadastro",
+                    controls=[
+                        ft.Text("Adicionar Novo Usuario", size=25, weight="bold"),
+                        nome, email, cpf, password, papel,
+                        ft.ElevatedButton("Enviar", on_click=enviar_dados),
+                        resultado,
+                        ft.ElevatedButton("Voltar", on_click=lambda e: page.go("/usuario")),
+                    ],
+                )
+            )
+
+        elif page.route == "/home":
+            page.views.append(
+                ft.View(
+                    "/home",
+                    controls=[
+                        ft.Text("Bem-vindo!", size=30),
+                        ft.ElevatedButton("Clientes", on_click=ir_para_clientes),
+                        ft.ElevatedButton("Veiculos", on_click=ir_para_veiculos),
+                        ft.ElevatedButton("Serviços", on_click=ir_para_servico),
+                        ft.ElevatedButton("Usuario", on_click=usuario),
+                    ],
+                    #controls=[
+                    #ft.Text("Bem-vindo!", size=30),
+                    #ft.ElevatedButton("Ver Clientes", on_click=ir_para_clientes),
+                    #ft.ElevatedButton("Adicionar Cliente", on_click=ir_para_adicionar),
+                    #ft.ElevatedButton("Editar Cliente", on_click=ir_para_editar),
+                    #],
+                    vertical_alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            )
 
         page.update()
 
