@@ -17,8 +17,6 @@ def main(page: ft.Page):
         global token
         token = new_token
 
-
-
     #CLIENTE
     def ir_para_clientes(e):
         page.go("/clientes")
@@ -94,8 +92,9 @@ def main(page: ft.Page):
                 )
             )
 
-        if page.route == "/login":
+        elif page.route == "/login":
             # Tela de Login
+            nome = ft.TextField(label="Nome", autofocus=True)
             email = ft.TextField(label="Email", autofocus=True)
             password = ft.TextField(label="Senha", password=True)
             login_result = ft.Text("")
@@ -104,18 +103,19 @@ def main(page: ft.Page):
                 dados = {
                     "email": email.value,
                     "senha": password.value,
+                    "nome":  nome.value,
                 }
                 try:
                     resposta = requests.post("http://10.135.232.28:5000/login", json=dados)
                     print(resposta.text)
                     if resposta.status_code == 200:
                         set_token(resposta.json().get('token'))
-                        page.go("/home")  # Redireciona para a tela de clientes
+                        page.go("/home")
                     else:
                         login_result.value = f"Erro: {resposta.status_code} - {resposta.text}"
-                except requests.exceptions.RequestException as err:  # Tratamento de erros de requisição
+                except requests.exceptions.RequestException as err:
                     login_result.value = f"Erro na requisição: {err}"
-                except ValueError:  # Tratamento de erros de JSON
+                except ValueError:
                     login_result.value = "Erro: Resposta inválida do servidor"
                 except Exception as err:
                     login_result.value = f"Erro inesperado: {err}"
@@ -128,7 +128,7 @@ def main(page: ft.Page):
                     "/login",
                     controls=[
                         ft.Text("Login", size=30, weight="bold"),
-                        email, password,
+                        nome, email, password,
                         ft.ElevatedButton("Entrar", on_click=verificar_login),
                         login_result,
                     ],
@@ -155,6 +155,7 @@ def main(page: ft.Page):
 
 
         elif page.route == "/listar_clientes":
+            resposta = None
             try:
                 resposta = requests.get("http://10.135.232.28:5000/listarClientes",
                                         headers={"Authorization": f"Bearer {get_token()}"})
@@ -165,8 +166,20 @@ def main(page: ft.Page):
                     )
                     for c in dados
                 ]
+            except requests.exceptions.HTTPError as err:
+                if resposta is not None:  # Verifica se a resposta foi atribuída
+                    print(f"Erro: {err}, Status Code: {resposta.status_code}, Resposta: {resposta.text}")
+                    if resposta.status_code == 401:
+                        clientes = [ft.Text("Erro: Você precisa estar logado para acessar esta página.")]
+                    elif resposta.status_code == 403:
+                        clientes = [ft.Text("Erro: Você não tem permissão para acessar esta página.")]
+                    else:
+                        clientes = [ft.Text(f"Erro ao buscar clientes(está aqui? 1): {err}")]
+                else:
+                    clientes = [ft.Text("Erro: A requisição não foi realizada.")]
             except Exception as err:
-                clientes = [ft.Text(f"Erro ao buscar clientes: {err}")]
+                err="precisa estar logado"
+                clientes = [ft.Text(f"{err}")]
 
             page.views.append(
                 ft.View(
@@ -194,6 +207,7 @@ def main(page: ft.Page):
                     "telefone": telefone.value,
                     "endereco": endereco.value,
                 }
+
                 try:
                     r = requests.post("http://10.135.232.28:5000/adicionarClientes", json=dados,
                                       headers={"Authorization": f"Bearer {get_token()}"})
@@ -203,7 +217,7 @@ def main(page: ft.Page):
                         resultado.value = f"Erro: {r.json().get('mensagem', r.text)}"
                 except Exception as err:
                     resultado.value = f"Erro na requisição: {err}"
-                page.update()
+                    page.update()
 
             page.views.append(
                 ft.View(
